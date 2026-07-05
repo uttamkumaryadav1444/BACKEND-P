@@ -10,13 +10,13 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// ✅ Create uploads directory if it doesn't exist
+// ✅ Create uploads directory
 const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer for file uploads
+// Regular upload (for local development)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -29,7 +29,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|pdf/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -75,7 +75,7 @@ router.post("/base64", auth, async (req, res) => {
     const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + extension;
     const filePath = path.join(uploadDir, filename);
 
-    // ✅ Save file
+    // Save file
     fs.writeFileSync(filePath, buffer);
 
     const fileUrl = `/uploads/${filename}`;
@@ -96,7 +96,7 @@ router.post("/base64", auth, async (req, res) => {
   }
 });
 
-// Regular upload (for local development)
+// Regular upload
 router.post("/", auth, upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
