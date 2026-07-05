@@ -32,7 +32,7 @@ import uploadRoutes from "./routes/upload.js";
 import educationRoutes from "./routes/education.js";
 import emailRoutes from "./routes/email.js";
 import testimonialRoutes from "./routes/testimonials.js";
-import uploadRoutes from "./routes/upload.js";
+
 
 
 // ✅ Connect to MongoDB
@@ -65,7 +65,7 @@ app.use("/api/certificates", certificatesRoutes);
 app.use("/api/achievements", achievementsRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/upload", uploadRoutes);
+
 
 // ✅ Upload route - WITHOUT /api
 app.use("/upload", uploadRoutes);
