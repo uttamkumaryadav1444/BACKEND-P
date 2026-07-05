@@ -38,12 +38,11 @@ connectDB();
 
 const app = express();
 
-// ✅ CORS Configuration - WORKING VERSION
+// ✅ CORS Configuration - FIXED VERSION
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With']
 }));
 
 // ✅ Handle preflight OPTIONS requests
@@ -65,8 +64,9 @@ app.use("/api/achievements", achievementsRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/contact", contactRoutes);
 
-// ✅ FIX: Upload route WITHOUT /api (matches frontend)
+// ✅ Upload route - WITHOUT /api
 app.use("/upload", uploadRoutes);
+
 
 app.use("/api/education", educationRoutes);
 app.use("/api/email", emailRoutes);
