@@ -42,8 +42,8 @@ const upload = multer({
   }
 });
 
-// ✅ FIX: Route should be /upload/base64 (matches frontend)
-router.post("/upload/base64", auth, async (req, res) => {
+// ✅ FIX: Route should be "/base64" (server.js me "/upload" already hai)
+router.post("/base64", auth, async (req, res) => {
   try {
     const { file, type } = req.body;
     
@@ -96,7 +96,7 @@ router.post("/upload/base64", auth, async (req, res) => {
   }
 });
 
-// Regular upload
+// Regular upload (for local)
 router.post("/", auth, upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
