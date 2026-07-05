@@ -38,27 +38,9 @@ connectDB();
 
 const app = express();
 
-// ✅ CORS Configuration - Allow all frontend domains
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://frontend-blush-omega-4wocwqn4e9.vercel.app',
-  'https://frontend-*.vercel.app',
-  'https://*.vercel.app'
-];
-
+// ✅ CORS Configuration - SIMPLE VERSION (Allow all origins)
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.some(allowed => origin.match(allowed.replace(/\*/g, '.*')))) {
-      callback(null, true);
-    } else {
-      console.log('❌ CORS blocked origin:', origin);
-      callback(null, true); // Allow all for now (remove in production)
-    }
-  },
-  credentials: true,
+  origin: '*',  // Allow all for testing
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
