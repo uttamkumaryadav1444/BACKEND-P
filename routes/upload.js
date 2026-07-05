@@ -42,8 +42,8 @@ const upload = multer({
   }
 });
 
-// ✅ BASE64 UPLOAD ROUTE (for Vercel)
-router.post("/base64", auth, async (req, res) => {
+// ✅ FIX: Route should be /upload/base64 (matches frontend)
+router.post("/upload/base64", auth, async (req, res) => {
   try {
     const { file, type } = req.body;
     
