@@ -10,14 +10,15 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// ✅ Configure multer for file uploads
+// ✅ Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, "../uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // ✅ Create uploads directory if it doesn't exist
-    const uploadDir = path.join(__dirname, "../uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -41,10 +42,12 @@ const upload = multer({
   }
 });
 
-// ✅ Base64 upload endpoint (works on Vercel)
+// ✅ BASE64 UPLOAD ROUTE (for Vercel)
 router.post("/base64", auth, async (req, res) => {
   try {
     const { file, type } = req.body;
+    
+    console.log('📤 Base64 upload request received');
     
     if (!file) {
       return res.status(400).json({ message: "No file provided" });
@@ -66,21 +69,18 @@ router.post("/base64", auth, async (req, res) => {
     else if (mimeType.includes('gif')) extension = '.gif';
     else if (mimeType.includes('pdf')) extension = '.pdf';
     else if (mimeType.includes('webp')) extension = '.webp';
+    else if (mimeType.includes('jpeg')) extension = '.jpg';
 
     // Generate filename
     const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + extension;
-    const filePath = path.join(__dirname, '../uploads', filename);
-
-    // ✅ Create uploads directory if it doesn't exist
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    const filePath = path.join(uploadDir, filename);
 
     // ✅ Save file
     fs.writeFileSync(filePath, buffer);
 
     const fileUrl = `/uploads/${filename}`;
+    console.log('✅ File uploaded:', fileUrl);
+    
     res.json({ 
       success: true,
       message: "File uploaded successfully", 
@@ -88,12 +88,15 @@ router.post("/base64", auth, async (req, res) => {
       filename: filename
     });
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ message: error.message });
+    console.error('❌ Upload error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 });
 
-// ✅ Regular upload (for local development)
+// Regular upload (for local development)
 router.post("/", auth, upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
