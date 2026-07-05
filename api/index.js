@@ -17,6 +17,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 // ✅ Debug logs
 console.log('📧 EMAIL_USER (serverless):', process.env.EMAIL_USER || '❌ Not Set');
 console.log('📧 EMAIL_PASS (serverless):', process.env.EMAIL_PASS ? '✅ Set' : '❌ Not Set');
+console.log('🔑 JWT_SECRET (serverless):', process.env.JWT_SECRET ? '✅ Set' : '❌ Not Set');
 
 // ✅ Import everything
 import authRoutes from "../routes/auth.js";
@@ -57,8 +58,8 @@ const connectDB = async () => {
     
     // ✅ Connection options for serverless
     const opts = {
-      bufferCommands: false,
-      maxPoolSize: 5, // ✅ Connection pool size for serverless
+      bufferCommands: true,  // ✅ Set to true to avoid connection issues
+      maxPoolSize: 5,
       minPoolSize: 1,
       socketTimeoutMS: 30000,
       connectTimeoutMS: 10000,
@@ -89,10 +90,29 @@ const connectDB = async () => {
 
 const app = express();
 
-// ✅ CORS Configuration - Allow Vercel frontend
+// ✅ CORS Configuration - Allow all Vercel frontend
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://frontend-blush-omega-4wocwqn4e9.vercel.app',
+  'https://frontend-*.vercel.app',
+  'https://*.vercel.app'
+];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://*.vercel.app'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some(allowed => origin.match(allowed.replace(/\*/g, '.*')))) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS blocked origin (serverless):', origin);
+      callback(null, true); // Allow all for now (remove in production)
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 
 app.use(express.json({ limit: '10mb' }));
