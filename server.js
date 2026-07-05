@@ -8,10 +8,10 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ STEP 2: Load .env FIRST (before any other imports)
+// ✅ STEP 2: Load .env FIRST
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-// ✅ STEP 3: Debug - Check if env loaded
+// ✅ STEP 3: Debug
 console.log('📧 EMAIL_USER (server):', process.env.EMAIL_USER || '❌ Not Set');
 console.log('📧 EMAIL_PASS (server):', process.env.EMAIL_PASS ? '✅ Set' : '❌ Not Set');
 console.log('🔑 JWT_SECRET (server):', process.env.JWT_SECRET ? '✅ Set' : '❌ Not Set');
@@ -38,12 +38,16 @@ connectDB();
 
 const app = express();
 
-// ✅ CORS Configuration - SIMPLE VERSION (Allow all origins)
+// ✅ CORS Configuration - WORKING VERSION
 app.use(cors({
-  origin: '*',  // Allow all for testing
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  credentials: true
 }));
+
+// ✅ Handle preflight OPTIONS requests
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -60,7 +64,10 @@ app.use("/api/certificates", certificatesRoutes);
 app.use("/api/achievements", achievementsRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/contact", contactRoutes);
-app.use("/api/upload", uploadRoutes);
+
+// ✅ FIX: Upload route WITHOUT /api (matches frontend)
+app.use("/upload", uploadRoutes);
+
 app.use("/api/education", educationRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/testimonials", testimonialRoutes);
