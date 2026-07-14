@@ -1,91 +1,68 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import auth from "../middleware/auth.js";
-import fs from 'fs';
+import dotenv from "dotenv";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const router = express.Router();
 
-// ✅ Create uploads directory
-const uploadDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Regular upload (for local development)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+// ✅ Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      return cb(null, true);
-    } else {
-      cb(new Error("Only images and PDFs are allowed"));
+console.log('☁️ Cloudinary configured:', process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌');
+
+// ✅ Configure Multer with Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'portfolio',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'],
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      return uniqueSuffix;
     }
   }
 });
 
-// ✅ FIX: Route is "/base64" (server.js me "/upload" already hai)
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// ✅ Base64 Upload Route - Cloudinary
 router.post("/base64", auth, async (req, res) => {
   try {
     const { file, type } = req.body;
     
     console.log('📤 Base64 upload request received');
+    console.log('📤 File type:', type);
     
     if (!file) {
       return res.status(400).json({ message: "No file provided" });
     }
 
-    // Extract base64 data
-    const matches = file.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      return res.status(400).json({ message: "Invalid file format" });
-    }
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(file, {
+      folder: 'portfolio',
+      resource_type: 'auto'
+    });
 
-    const mimeType = matches[1];
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Determine extension
-    let extension = '.jpg';
-    if (mimeType.includes('png')) extension = '.png';
-    else if (mimeType.includes('gif')) extension = '.gif';
-    else if (mimeType.includes('pdf')) extension = '.pdf';
-    else if (mimeType.includes('webp')) extension = '.webp';
-    else if (mimeType.includes('jpeg')) extension = '.jpg';
-
-    // Generate filename
-    const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + extension;
-    const filePath = path.join(uploadDir, filename);
-
-    // Save file
-    fs.writeFileSync(filePath, buffer);
-
-    const fileUrl = `/uploads/${filename}`;
-    console.log('✅ File uploaded:', fileUrl);
+    const fileUrl = result.secure_url;
+    console.log('✅ File uploaded to Cloudinary:', fileUrl);
     
     res.json({ 
       success: true,
       message: "File uploaded successfully", 
       fileUrl: fileUrl,
-      filename: filename
+      filename: result.public_id,
+      cloudinary: true
     });
   } catch (error) {
     console.error('❌ Upload error:', error);
@@ -96,16 +73,16 @@ router.post("/base64", auth, async (req, res) => {
   }
 });
 
-// Regular upload (for local)
+// ✅ Multer Upload Route (for local testing)
 router.post("/", auth, upload.single("image"), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-    const imageUrl = `/uploads/${req.file.filename}`;
+    console.log('✅ File uploaded via multer:', req.file.path);
     res.json({ 
       message: "File uploaded successfully", 
-      imageUrl: imageUrl,
+      imageUrl: req.file.path,
       filename: req.file.filename
     });
   } catch (error) {
@@ -113,13 +90,14 @@ router.post("/", auth, upload.single("image"), (req, res) => {
   }
 });
 
-// Upload resume (PDF)
+// ✅ Resume Upload Route
 router.post("/resume", auth, upload.single("resume"), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
-    const resumeUrl = `/uploads/${req.file.filename}`;
+    const resumeUrl = req.file.path;
+    console.log('✅ Resume uploaded:', resumeUrl);
     res.json({ 
       message: "Resume uploaded successfully", 
       resumeUrl: resumeUrl,

@@ -15,6 +15,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 console.log('📧 EMAIL_USER (server):', process.env.EMAIL_USER || '❌ Not Set');
 console.log('📧 EMAIL_PASS (server):', process.env.EMAIL_PASS ? '✅ Set' : '❌ Not Set');
 console.log('🔑 JWT_SECRET (server):', process.env.JWT_SECRET ? '✅ Set' : '❌ Not Set');
+console.log('☁️ CLOUDINARY_CLOUD_NAME (server):', process.env.CLOUDINARY_CLOUD_NAME || '❌ Not Set');
 
 // ✅ STEP 4: Import everything AFTER dotenv.config()
 import connectDB from "./config/db.js";
@@ -32,8 +33,6 @@ import uploadRoutes from "./routes/upload.js";
 import educationRoutes from "./routes/education.js";
 import emailRoutes from "./routes/email.js";
 import testimonialRoutes from "./routes/testimonials.js";
-
-
 
 // ✅ Connect to MongoDB
 connectDB();
@@ -66,10 +65,8 @@ app.use("/api/achievements", achievementsRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/contact", contactRoutes);
 
-
-// ✅ Upload route - WITHOUT /api
+// ✅ Upload route - WITHOUT /api (works with Cloudinary)
 app.use("/upload", uploadRoutes);
-
 
 app.use("/api/education", educationRoutes);
 app.use("/api/email", emailRoutes);
@@ -77,7 +74,7 @@ app.use("/api/testimonials", testimonialRoutes);
 
 // ✅ Test route
 app.get("/api/test", (req, res) => {
-  res.json({ message: "Backend is running!" });
+  res.json({ message: "Backend is running on Vercel Serverless!" });
 });
 
 // ✅ Health check
