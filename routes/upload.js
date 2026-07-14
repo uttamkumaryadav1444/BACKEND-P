@@ -37,7 +37,7 @@ const upload = multer({
 });
 
 // ✅ Base64 Upload Route - Cloudinary
-router.post("/base64", auth, async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
     const { file, type } = req.body;
     
