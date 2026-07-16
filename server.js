@@ -3,16 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-// server.js ke top par (after dotenv.config)
-console.log('🔍 Environment Variables:');
-console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? '✅ Set' : '❌ Missing');
-console.log('CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+console.log('🔍 RESEND_API_KEY:', process.env.RESEND_API_KEY ? '✅ Set' : '❌ Missing');
 console.log('☁️ CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME || '❌');
 
 import connectDB from "./config/db.js";
@@ -35,6 +32,18 @@ connectDB();
 
 const app = express();
 
+// ✅ CORS - SIRF YAHAN CHANGE
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -43,8 +52,8 @@ app.use(cors({
 
 app.options('*', cors());
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ✅ ROUTES
@@ -59,15 +68,16 @@ app.use("/api/achievements", achievementsRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/education", educationRoutes);
-app.use("/api/email", emailRoutes); // ✅ Email route
+app.use("/api/email", emailRoutes);
 app.use("/api/testimonials", testimonialRoutes);
+app.use("/api/upload", uploadRoutes);
 
-// ✅ SIRF YAHAN CHANGE - Upload route ko /upload se /api/upload kiya
-app.use("/api/upload", uploadRoutes); 
-
-// ✅ Health check - simple
+// ✅ Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString() 
+  });
 });
 
 app.get("/api/test", (req, res) => {
@@ -77,11 +87,15 @@ app.get("/api/test", (req, res) => {
 // ✅ Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Server error:', err.stack);
-  res.status(500).json({ message: "Something went wrong!" });
+  res.status(500).json({ 
+    success: false,
+    message: err.message || "Something went wrong!" 
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`✅ CORS enabled for all origins`);
+  console.log(`📧 Email: /api/email/send`);
 });
