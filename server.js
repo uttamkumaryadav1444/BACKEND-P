@@ -32,7 +32,7 @@ connectDB();
 
 const app = express();
 
-// ✅ CORS - SIRF YAHAN CHANGE
+// ✅ CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -56,7 +56,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ ROUTES
+// ✅ ROUTES - YAHAN CHANGE KARO
 app.use("/api/auth", authRoutes);
 app.use("/api/overview", overviewRoutes);
 app.use("/api/skills", skillsRoutes);
@@ -70,7 +70,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/education", educationRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/testimonials", testimonialRoutes);
-app.use("/api/upload", uploadRoutes);
+app.use("/api", uploadRoutes);  // ✅ CHANGE: /api/upload se /api karo
 
 // ✅ Health check
 app.get("/api/health", (req, res) => {
@@ -99,3 +99,6 @@ app.listen(PORT, () => {
   console.log(`✅ CORS enabled for all origins`);
   console.log(`📧 Email: /api/email/send`);
 });
+
+// ✅ YEH ADD KARO - VERCEL KE LIYE
+export default app;
