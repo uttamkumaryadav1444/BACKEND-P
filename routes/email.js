@@ -31,6 +31,7 @@ router.post("/send", async (req, res) => {
       });
     }
 
+    // ✅ Send email using Resend
     const { data, error } = await resend.emails.send({
       from: 'Portfolio <onboarding@resend.dev>',
       to: ['uttamkumark8969@gmail.com'],
@@ -59,7 +60,7 @@ router.post("/send", async (req, res) => {
       });
     }
 
-    console.log('✅ Email sent successfully!');
+    console.log('✅ Email sent successfully!', data);
     res.json({ 
       success: true, 
       message: "Email sent successfully!" 

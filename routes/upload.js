@@ -80,7 +80,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // ============================================================
-// ✅ ROUTE 2: Resume Upload (PDF)
+// ✅ ROUTE 2: Resume Upload (PDF) - FIXED
 // ============================================================
 router.post("/resume", auth, upload.single("resume"), async (req, res) => {
   try {
@@ -90,13 +90,14 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
     
     // ✅ Upload to Cloudinary with PDF settings
     const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'portfolio',
-        resource_type: 'raw',  // ✅ auto se raw karo
-        format: 'pdf',
-        flags: 'attachment',
-        use_filename: true,
-        unique_filename: false
-  });
+      folder: 'portfolio/resumes',
+      resource_type: 'raw',
+      format: 'pdf',
+      public_id: `resume_${Date.now()}`,
+      access_mode: 'public',
+      use_filename: false,
+      unique_filename: true
+    });
 
     const resumeUrl = result.secure_url;
     console.log('✅ Resume uploaded to Cloudinary:', resumeUrl);
@@ -133,12 +134,9 @@ router.post("/image", auth, upload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-      const result = await cloudinary.uploader.upload(req.file.path , {
+    const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'portfolio',
-      resource_type: 'auto',
-      flags: 'attachment',  // ✅ Ye line add karo
-      use_filename: true,
-      unique_filename: false
+      resource_type: 'auto'
     });
 
     // Clean up local file
