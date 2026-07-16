@@ -3,18 +3,18 @@ import { Resend } from 'resend';
 
 const router = express.Router();
 
-// ✅ Use your new API key
+// ✅ API Key check
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-console.log('📧 Resend API Key status:', RESEND_API_KEY ? '✅ Configured' : '❌ Missing');
+console.log('📧 Resend API Key:', RESEND_API_KEY ? '✅ Found' : '❌ Not found');
 
-// ✅ Initialize Resend
+// ✅ Initialize Resend with new key
 const resend = new Resend(RESEND_API_KEY);
 
 router.post("/send", async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    console.log('📧 Sending email from:', email);
+    console.log('📧 Received:', { name, email, subject, message: message?.substring(0, 20) });
 
     // ✅ Validation
     if (!name || !email || !message) {
@@ -28,7 +28,7 @@ router.post("/send", async (req, res) => {
     if (!RESEND_API_KEY) {
       return res.status(500).json({
         success: false,
-        message: "Email service not configured. Please contact admin."
+        message: "Email service not configured"
       });
     }
 
@@ -48,7 +48,7 @@ router.post("/send", async (req, res) => {
             <p><strong>💬 Message:</strong></p>
             <p>${message}</p>
           </div>
-          <p style="color: #94a3b8; font-size: 0.9rem;">Sent from your portfolio website</p>
+          <p style="color: #94a3b8; font-size: 0.9rem;">Sent from portfolio website</p>
         </div>
       `
     });
@@ -61,7 +61,7 @@ router.post("/send", async (req, res) => {
       });
     }
 
-    console.log('✅ Email sent successfully!', data);
+    console.log('✅ Email sent!', data);
     res.json({
       success: true,
       message: "Email sent successfully!"

@@ -10,16 +10,21 @@ dotenv.config();
 
 const router = express.Router();
 
-// ✅ Cloudinary Config
+// ✅ Cloudinary Config - FIXED
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true  // ✅ Add this
 });
 
-console.log('☁️ Cloudinary configured:', process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌');
+console.log('☁️ Cloudinary configured:', {
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌',
+  api_key: process.env.CLOUDINARY_API_KEY ? '✅' : '❌',
+  api_secret: process.env.CLOUDINARY_API_SECRET ? '✅' : '❌'
+});
 
-// ✅ Configure Multer for file uploads (temporary storage)
+// ✅ Configure Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(process.cwd(), 'uploads');
@@ -36,7 +41,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|pdf/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -49,53 +54,21 @@ const upload = multer({
   }
 });
 
-// ============================================================
-// ✅ ROUTE 1: Base64 Image Upload (for gallery, certificates, etc.)
-// ============================================================
-router.post("/", auth, async (req, res) => {
-  try {
-    const { file } = req.body;
-    
-    if (!file) {
-      return res.status(400).json({ message: "No file provided" });
-    }
-
-    const result = await cloudinary.uploader.upload(file, {
-      folder: 'portfolio',
-      resource_type: 'auto'
-    });
-
-    res.json({ 
-      success: true,
-      fileUrl: result.secure_url,
-      cloudinary: true
-    });
-  } catch (error) {
-    console.error('❌ Upload error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
-
-// ============================================================
-// ✅ ROUTE 2: Resume Upload (PDF) - FIXED FOR DOWNLOAD
-// ============================================================
+// ✅ Resume Upload - FIXED
 router.post("/resume", auth, upload.single("resume"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
     
-    // ✅ Upload to Cloudinary with download settings
+    console.log('📄 Uploading resume:', req.file.originalname);
+    
+    // ✅ Upload with proper options
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'portfolio/resumes',
-      resource_type: 'auto',  // ✅ auto rakho
-      format: 'pdf',
+      resource_type: 'auto',
       public_id: `resume_${Date.now()}`,
       access_mode: 'public',
-      flags: 'attachment',  // ✅ Force download
       use_filename: true,
       unique_filename: false
     });
@@ -103,7 +76,7 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
     const resumeUrl = result.secure_url;
     console.log('✅ Resume uploaded:', resumeUrl);
     
-    // Clean up local file
+    // Clean up
     try {
       fs.unlinkSync(req.file.path);
     } catch (err) {
@@ -113,47 +86,10 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
     res.json({ 
       success: true,
       message: "Resume uploaded successfully", 
-      resumeUrl: resumeUrl,
-      filename: req.file.originalname,
-      cloudinary: true
+      resumeUrl: resumeUrl
     });
   } catch (error) {
     console.error('❌ Resume upload error:', error);
-    res.status(500).json({ 
-      success: false,
-      message: error.message 
-    });
-  }
-});
-// ============================================================
-// ✅ ROUTE 3: Regular Image Upload (for local testing)
-// ============================================================
-router.post("/image", auth, upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'portfolio',
-      resource_type: 'auto'
-    });
-
-    // Clean up local file
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (err) {
-      console.log('⚠️ Could not delete temp file:', err.message);
-    }
-
-    res.json({ 
-      success: true,
-      message: "Image uploaded successfully", 
-      imageUrl: result.secure_url,
-      cloudinary: true
-    });
-  } catch (error) {
-    console.error('❌ Image upload error:', error);
     res.status(500).json({ 
       success: false,
       message: error.message 
