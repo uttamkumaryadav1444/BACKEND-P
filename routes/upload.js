@@ -132,9 +132,12 @@ router.post("/image", auth, upload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'portfolio/images',
-      resource_type: 'auto'
+      const result = await cloudinary.uploader.upload(req.file.path , {
+      folder: 'portfolio',
+      resource_type: 'auto',
+      flags: 'attachment',  // ✅ Ye line add karo
+      use_filename: true,
+      unique_filename: false
     });
 
     // Clean up local file
