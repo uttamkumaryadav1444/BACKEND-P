@@ -90,12 +90,13 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
     
     // ✅ Upload to Cloudinary with PDF settings
     const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'portfolio/resumes',
-      resource_type: 'auto',
-      pages: true,
-      use_filename: true,
-      unique_filename: false
-    });
+        folder: 'portfolio',
+        resource_type: 'raw',  // ✅ auto se raw karo
+        format: 'pdf',
+        flags: 'attachment',
+        use_filename: true,
+        unique_filename: false
+  });
 
     const resumeUrl = result.secure_url;
     console.log('✅ Resume uploaded to Cloudinary:', resumeUrl);
