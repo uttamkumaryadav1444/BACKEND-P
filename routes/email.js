@@ -3,12 +3,23 @@ import { Resend } from 'resend';
 
 const router = express.Router();
 
-// ✅ NEW API KEY
+// ✅ Get API Key from environment
 const API_KEY = process.env.RESEND_API_KEY;
-console.log('📧 API Key:', API_KEY ? `${API_KEY.substring(0, 10)}...` : 'NOT SET');
+console.log('📧 API Key Status:', API_KEY ? '✅ Found' : '❌ Missing');
+console.log('📧 API Key:', API_KEY ? API_KEY.substring(0, 10) + '...' : 'Not Set');
 
 // ✅ Initialize Resend with new key
 const resend = new Resend(API_KEY);
+
+// ✅ Test Route - Check if API Key is loading
+router.get("/test", (req, res) => {
+  res.json({
+    success: true,
+    apiKeyExists: !!API_KEY,
+    apiKeyLength: API_KEY?.length || 0,
+    apiKeyPrefix: API_KEY?.substring(0, 10) || 'None'
+  });
+});
 
 router.post("/send", async (req, res) => {
   try {
@@ -37,7 +48,7 @@ router.post("/send", async (req, res) => {
     // ✅ Send Email with new key
     const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
-      to: ['uttamkumark8969@gmail.com'],  // ✅ Your email
+      to: ['uttamkumark8969@gmail.com'],
       subject: `Portfolio Contact: ${subject || 'New Message'}`,
       reply_to: email,
       html: `

@@ -3,6 +3,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+// server.js ke top par (after dotenv.config)
+console.log('🔍 Environment Variables:');
+console.log('RESEND_API_KEY:', process.env.RESEND_API_KEY ? '✅ Set' : '❌ Missing');
+console.log('CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
