@@ -80,7 +80,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // ============================================================
-// ✅ ROUTE 2: Resume Upload (PDF) - FIXED
+// ✅ ROUTE 2: Resume Upload (PDF) - FIXED FOR DOWNLOAD
 // ============================================================
 router.post("/resume", auth, upload.single("resume"), async (req, res) => {
   try {
@@ -88,19 +88,20 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
     
-    // ✅ Upload to Cloudinary with PDF settings
+    // ✅ Upload to Cloudinary with download settings
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'portfolio/resumes',
-      resource_type: 'raw',
+      resource_type: 'auto',  // ✅ auto rakho
       format: 'pdf',
       public_id: `resume_${Date.now()}`,
       access_mode: 'public',
-      use_filename: false,
-      unique_filename: true
+      flags: 'attachment',  // ✅ Force download
+      use_filename: true,
+      unique_filename: false
     });
 
     const resumeUrl = result.secure_url;
-    console.log('✅ Resume uploaded to Cloudinary:', resumeUrl);
+    console.log('✅ Resume uploaded:', resumeUrl);
     
     // Clean up local file
     try {
@@ -124,7 +125,6 @@ router.post("/resume", auth, upload.single("resume"), async (req, res) => {
     });
   }
 });
-
 // ============================================================
 // ✅ ROUTE 3: Regular Image Upload (for local testing)
 // ============================================================
