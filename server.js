@@ -9,24 +9,17 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-console.log('🔍 RESEND_API_KEY:', process.env.RESEND_API_KEY ? '✅ Set' : '❌ Missing');
+console.log('📧 EMAIL_USER:', process.env.EMAIL_USER ? '✅ Set' : '❌ Missing');
+console.log('📧 EMAIL_PASS:', process.env.EMAIL_PASS ? '✅ Set' : '❌ Missing');
 console.log('☁️ CLOUDINARY:', process.env.CLOUDINARY_CLOUD_NAME || '❌');
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
-import overviewRoutes from "./routes/overview.js";
-import skillsRoutes from "./routes/skills.js";
-import projectsRoutes from "./routes/projects.js";
-import experienceRoutes from "./routes/experience.js";
-import nonTechSkillsRoutes from "./routes/nonTechSkills.js";
-import certificatesRoutes from "./routes/certificates.js";
-import achievementsRoutes from "./routes/achievements.js";
 import galleryRoutes from "./routes/gallery.js";
 import contactRoutes from "./routes/contact.js";
 import uploadRoutes from "./routes/upload.js";
-import educationRoutes from "./routes/education.js";
 import emailRoutes from "./routes/email.js";
-import testimonialRoutes from "./routes/testimonials.js";
+import portfolioRoutes from "./routes/portfolio.js"; // ✅ NEW: Combined routes
 
 connectDB();
 
@@ -56,27 +49,20 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ ROUTES - YAHAN CHANGE KARO
-app.use("/api/auth", authRoutes);
-app.use("/api/overview", overviewRoutes);
-app.use("/api/skills", skillsRoutes);
-app.use("/api/projects", projectsRoutes);
-app.use("/api/experience", experienceRoutes);
-app.use("/api/non-tech-skills", nonTechSkillsRoutes);
-app.use("/api/certificates", certificatesRoutes);
-app.use("/api/achievements", achievementsRoutes);
-app.use("/api/gallery", galleryRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/education", educationRoutes);
-app.use("/api/email", emailRoutes);
-app.use("/api/testimonials", testimonialRoutes);
-app.use("/api", uploadRoutes);  // ✅ CHANGE: /api/upload se /api karo
+// ✅ OPTIMIZED ROUTES - Only 6 serverless functions now!
+app.use("/api/portfolio", portfolioRoutes);  // Combined: overview, skills, projects, experience, nonTechSkills, certificates, achievements, education, testimonials
+app.use("/api/auth", authRoutes);            // Authentication
+app.use("/api/email", emailRoutes);          // Contact form (Nodemailer)
+app.use("/api/contact", contactRoutes);      // Contact (if separate from email)
+app.use("/api/gallery", galleryRoutes);      // Gallery management
+app.use("/api", uploadRoutes);               // File uploads
 
 // ✅ Health check
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: 'healthy', 
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    functions: 6 // Number of serverless functions
   });
 });
 
@@ -93,12 +79,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`✅ CORS enabled for all origins`);
-  console.log(`📧 Email: /api/email/send`);
-});
+// Only listen if not on Vercel
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`✅ CORS enabled for all origins`);
+    console.log(`📧 Email: /api/email/send`);
+    console.log(`📊 Portfolio: /api/portfolio/all`);
+  });
+}
 
-// ✅ YEH ADD KARO - VERCEL KE LIYE
+// ✅ For Vercel
 export default app;
