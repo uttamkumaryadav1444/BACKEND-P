@@ -19,7 +19,7 @@ import galleryRoutes from "./routes/gallery.js";
 import contactRoutes from "./routes/contact.js";
 import uploadRoutes from "./routes/upload.js";
 import emailRoutes from "./routes/email.js";
-import portfolioRoutes from "./routes/portfolio.js"; // ✅ Combined routes
+import portfolioRoutes from "./routes/portfolio.js";
 
 connectDB();
 
@@ -49,61 +49,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ OPTIMIZED ROUTES - Only 6 serverless functions now!
-app.use("/api/portfolio", portfolioRoutes);  // Combined: overview, skills, projects, experience, nonTechSkills, certificates, achievements, education, testimonials
-app.use("/api/auth", authRoutes);            // Authentication
-app.use("/api/email", emailRoutes);          // Contact form (Nodemailer)
-app.use("/api/contact", contactRoutes);      // Contact (if separate from email)
-app.use("/api/gallery", galleryRoutes);      // Gallery management
-app.use("/api/upload", uploadRoutes);        // File uploads (includes resume endpoints)
+// ✅ OPTIMIZED ROUTES - Only 6 serverless functions!
+app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/email", emailRoutes);
+app.use("/api/contact", contactRoutes);
+app.use("/api/gallery", galleryRoutes);
 
-// ✅ Resume endpoints - Direct access
-app.get("/api/resume/url", async (req, res) => {
-  try {
-    // Forward to upload routes
-    req.url = '/upload/resume/url';
-    uploadRoutes(req, res);
-  } catch (error) {
-    console.error('❌ Resume URL error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
-  }
-});
-
-app.get("/api/resume/download", async (req, res) => {
-  try {
-    req.url = '/upload/resume/download';
-    uploadRoutes(req, res);
-  } catch (error) {
-    console.error('❌ Resume download error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
-  }
-});
-
-app.get("/api/resume/view", async (req, res) => {
-  try {
-    req.url = '/upload/resume/view';
-    uploadRoutes(req, res);
-  } catch (error) {
-    console.error('❌ Resume view error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    });
-  }
-});
+// ✅ FIXED: Only mount uploadRoutes ONCE at /api
+// This makes: /api/upload, /api/upload/test, /api/resume/url, etc. work
+app.use("/api", uploadRoutes);
 
 // ✅ Health check
 app.get("/api/health", (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    functions: 6 // Number of serverless functions
+    functions: 6
   });
 });
 
@@ -130,6 +92,8 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`📊 Portfolio: /api/portfolio/all`);
     console.log(`📄 Resume: /api/resume/view`);
     console.log(`📥 Resume Download: /api/resume/download`);
+    console.log(`📤 Upload: /api/upload`);
+    console.log(`🧪 Test Upload: /api/upload/test`);
   });
 }
 
