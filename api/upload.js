@@ -8,15 +8,11 @@ cloudinary.config({
   secure: true
 });
 
-console.log('☁️ Cloudinary configured:', {
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌',
-  api_key: process.env.CLOUDINARY_API_KEY ? '✅' : '❌',
-  api_secret: process.env.CLOUDINARY_API_SECRET ? '✅' : '❌'
-});
+console.log('☁️ Cloudinary configured');
 
 export default async function handler(req, res) {
   // ============================================================
-  // ✅ CORS Headers - Sab se pehle
+  // ✅ CORS Headers
   // ============================================================
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +20,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
 
   // ============================================================
-  // ✅ Handle OPTIONS (Preflight)
+  // ✅ Handle OPTIONS
   // ============================================================
   if (req.method === 'OPTIONS') {
     console.log('✅ OPTIONS request handled');
@@ -32,20 +28,18 @@ export default async function handler(req, res) {
   }
 
   // ============================================================
-  // ✅ GET - Test route / Resume routes
+  // ✅ GET - Resume routes
   // ============================================================
   if (req.method === 'GET') {
     const url = req.url;
+    console.log('📥 GET request:', url);
     
-    // ✅ Health / Test
+    // ✅ Test route
     if (url === '/' || url === '/test') {
-      console.log('✅ GET /test request received');
       return res.status(200).json({
         success: true,
         message: '✅ Upload API is working!',
-        cloudinary: {
-          cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? '✅ Set' : '❌ Missing',
-        },
+        cloudinary: process.env.CLOUDINARY_CLOUD_NAME ? 'Configured ✅' : 'Missing ❌',
         timestamp: new Date().toISOString()
       });
     }
@@ -70,11 +64,10 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
           success: true,
-          resumeUrl: result.resources[0].secure_url,
-          publicId: result.resources[0].public_id
+          resumeUrl: result.resources[0].secure_url
         });
       } catch (error) {
-        console.error('❌ Error fetching resume:', error);
+        console.error('❌ Error:', error);
         return res.status(500).json({
           success: false,
           error: error.message
@@ -82,8 +75,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ Download Resume (PDF file)
-    if (url === '/resume/download' || url.startsWith('/resume/download')) {
+    // ✅ Download Resume - FIXED
+    if (url === '/resume/download') {
       try {
         console.log('📥 Downloading resume...');
         
@@ -103,15 +96,22 @@ export default async function handler(req, res) {
         const resumeUrl = result.resources[0].secure_url;
         console.log('📄 Resume URL:', resumeUrl);
 
-        // ✅ Fetch the PDF from Cloudinary
-        const response = await fetch(resumeUrl);
-        const buffer = await response.arrayBuffer();
+        // ✅ Fetch the PDF
+        const pdfResponse = await fetch(resumeUrl);
+        
+        if (!pdfResponse.ok) {
+          throw new Error('Failed to fetch PDF from Cloudinary');
+        }
+        
+        const buffer = await pdfResponse.arrayBuffer();
 
-        // ✅ Set headers for PDF download
+        // ✅ Set correct headers for PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="Uttam_Kumar_Resume.pdf"');
         res.setHeader('Content-Length', buffer.byteLength);
-        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
 
         // ✅ Send the PDF
         return res.status(200).send(Buffer.from(buffer));
@@ -125,7 +125,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ View Resume (Open in browser)
+    // ✅ View Resume
     if (url === '/resume/view') {
       try {
         console.log('📄 Viewing resume...');
@@ -144,10 +144,10 @@ export default async function handler(req, res) {
         }
 
         // ✅ Redirect to Cloudinary for viewing
-        return res.redirect(result.resources[0].secure_url);
+        return res.redirect(302, result.resources[0].secure_url);
         
       } catch (error) {
-        console.error('❌ Error viewing resume:', error);
+        console.error('❌ Error:', error);
         return res.status(500).json({
           success: false,
           error: error.message
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // ✅ Unknown GET route
+    // ✅ Unknown route
     return res.status(404).json({
       success: false,
       error: 'Route not found'
@@ -163,7 +163,7 @@ export default async function handler(req, res) {
   }
 
   // ============================================================
-  // ✅ POST - Upload Route
+  // ✅ POST - Upload
   // ============================================================
   if (req.method === 'POST') {
     try {
@@ -172,35 +172,11 @@ export default async function handler(req, res) {
       const { file } = req.body;
 
       if (!file) {
-        console.log('❌ No file provided');
         return res.status(400).json({
           success: false,
           error: 'No file provided.'
         });
       }
-
-      const fileSizeInBytes = Buffer.byteLength(file, 'utf8');
-      const fileSizeInMB = fileSizeInBytes / (1024 * 1024);
-      console.log(`📄 File size: ${fileSizeInMB.toFixed(2)} MB`);
-      
-      if (fileSizeInMB > 10) {
-        return res.status(400).json({
-          success: false,
-          error: 'File size too large. Maximum 10MB allowed.'
-        });
-      }
-
-      const isValidImage = file.startsWith('data:image/');
-      const isValidPDF = file.startsWith('data:application/pdf');
-      
-      if (!isValidImage && !isValidPDF) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid file format. Please upload an image or PDF.'
-        });
-      }
-
-      console.log('📤 Uploading to Cloudinary...');
 
       const result = await cloudinary.uploader.upload(file, {
         folder: 'portfolio/uploads',
@@ -214,8 +190,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         message: 'File uploaded successfully',
-        fileUrl: result.secure_url,
-        publicId: result.public_id
+        fileUrl: result.secure_url
       });
 
     } catch (error) {
